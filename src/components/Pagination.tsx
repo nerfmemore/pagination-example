@@ -22,7 +22,7 @@ const Button = styled.button`
     }
 `;
 
-const Pagination = (props: {postsPerPage: number, totalNumberOfPosts: number, paginate: void}) => {
+const Pagination = (props: {postsPerPage: number, totalNumberOfPosts: number, paginate: (pageNumber:number) => void}) => {
     const numberOfPages: number[] = [];
 
     for (let i = 1; i <= Math.ceil(props.totalNumberOfPosts / props.postsPerPage); i++){

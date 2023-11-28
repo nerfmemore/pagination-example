@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import styled from 'styled-components';
 
 import Pagination from './Pagination';
@@ -69,12 +69,11 @@ async function getPosts(): Promise<Post[]>{
 }
 
 function Posts() {
-    const [filterString, setFilter] = useState<string>('')
-    const [currentPage, setCurrentPage] = useState<number>(1);
+    const [searchParams, setSearchParams] = useSearchParams();
     const [postsPerPage] = useState<number>(10);
     const {data, isError, isLoading} = useQuery({queryKey: ['posts'], queryFn: getPosts})
 
-    if (isLoading) {
+    if (isLoading || !data) {
         return (
             <div>Loading, please wait</div>
         )
@@ -86,21 +85,21 @@ function Posts() {
         )
     }
 
-    function paginate(pageNumber: number){
-        setCurrentPage(pageNumber);
+    const page = searchParams.get('page') ?? '1';
+    const filter = searchParams.get('filter') ?? '';
+
+    function paginate(pageNumber: number): void{
+        searchParams.set('page', `${pageNumber}`);
+        setSearchParams(searchParams);
     }
 
-    function filterBySearch(search: string) {
-        return data?.filter((response) => response.body.toLowerCase().includes(search.toLowerCase()))
-    }
-
-    const lastPostIndex = currentPage * postsPerPage;
+    const lastPostIndex = Number(page) * postsPerPage;
     const firstPostIndex = lastPostIndex - postsPerPage;
     
-    const filteredPosts = filterBySearch(filterString)
-    const currentPost = filteredPosts?.slice(firstPostIndex, lastPostIndex);
+    const filteredPosts = data.filter((response) => response.body.toLowerCase().includes(filter.toLowerCase()));
+    const currentPost = filteredPosts.slice(firstPostIndex, lastPostIndex);
 
-    const arrResult = currentPost?.map((post) => {
+    const arrResult = currentPost.map((post) => {
         return (
             <Container key={post.id}>
                 <PostTitle>{post.title}</PostTitle>
@@ -112,9 +111,9 @@ function Posts() {
 
     return (
         <Body>
-            <Search name='myInput' placeholder='Напишите любой текст' onChange={(event) => {setFilter(event.target.value)}}></Search>
+            <Search name='myInput' placeholder='Напишите любой текст' value={filter} onChange={(event) => {setSearchParams({filter: event.target.value})}}></Search>
             {arrResult}
-            <Pagination postsPerPage={postsPerPage} totalNumberOfPosts={filteredPosts?.length} paginate={paginate}></Pagination>
+            <Pagination postsPerPage={postsPerPage} totalNumberOfPosts={filteredPosts.length} paginate={paginate}></Pagination>
         </Body>
     )
 }
